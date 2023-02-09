@@ -1,7 +1,7 @@
 #I put this all in another file because I never want to see this code again.
 
 #this converts wca notation to the notation that optclock uses as its input, which is just a list of 14 numbers
-def scramble(s):
+def scrambler(s):
   n=[12,12,12,12,12,12,12,12,12,12,12,12,12,12]
   try:
     before=s.split("y2")[0].split(" ")
