@@ -128,7 +128,6 @@ async def optclockall(ctx, *, scramble):
           for c,v in enumerate(out.split("\n")):
             if "Found solution of length "+optimal in v:
               final+=solve(out.split("\n")[c+1].split("Found")[0].split("Checked")[0],"y2")+"\n"
-          await ctx.channel.send(out.split("solutions.\n")[1].split('\n')[0]+"\n"+final)
         else:
           await ctx.channel.send(f'Error: It appears you tried to enter the dial positions manually. This requires 14 numbers separated by spaces and you have {len(message.split(" "))}.')
           logging.info("bad input: len error")
@@ -139,11 +138,11 @@ async def optclockall(ctx, *, scramble):
         for c,v in enumerate(out.split("\n")):
           if "Found solution of length "+optimal in v:
             final+=solve(out.split("\n")[c+1].split("Found")[0].split("Checked")[0],scramble)+"\n"
-        if len(final)>1950:
-          final_lines = final.splitlines()
-          result = [final_lines[i] for i in range(len(final_lines)) if sum(len(line) for line in final_lines[:i+1]) < 1900]
-          final = "\n".join(result) +"\nSome solutions were removed to avoid discord's message size limit"
-        await ctx.channel.send(out.split("solutions.\n")[1].split('\n')[0]+"\n"+final)
+      if len(final)>1950:
+        final_lines = final.splitlines()
+        result = [final_lines[i] for i in range(len(final_lines)) if sum(len(line) for line in final_lines[:i+1]) < 1900]
+        final = "\n".join(result) +"\nSome solutions were removed to avoid discord's message size limit"
+      await ctx.channel.send(out.split("solutions.\n")[1].split('\n')[0]+"\n"+final)
     except:
        await ctx.channel.send('error. please check to make sure you entered the scramble correctly. use "!optclock help" to learn how to use.')
        logging.info("bad input")
