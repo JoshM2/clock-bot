@@ -13,9 +13,10 @@ import logging
 
 intents = discord.Intents.default()
 intents.message_content = True
-client = commands.Bot(command_prefix = "!", intents=intents)
+client = commands.Bot(command_prefix = "!", intents=intents, case_insensitive=True)
 client.remove_command('help')
 
+logging.getLogger("discord").setLevel(logging.ERROR)
 logging.basicConfig(filename="path to log file",level=logging.INFO,format="%(asctime)s:%(message)s")
 
 connection = sqlite3.connect("path to database")
@@ -131,6 +132,7 @@ async def optclockall(ctx, *, scramble):
         else:
           await ctx.channel.send(f'Error: It appears you tried to enter the dial positions manually. This requires 14 numbers separated by spaces and you have {len(message.split(" "))}.')
           logging.info("bad input: len error")
+          return
       else:
         out=check_output(["./path to optclock all"], input=f"{scrambler(scramble)}\nq\n", encoding="utf-8")
         optimal=out.split("solutions.\n")[1].split(" moves")[0]
@@ -163,8 +165,8 @@ async def updatecomps(ctx):
   await ctx.channel.send("updating...")
   for i in cursor.execute(f"SELECT comp_id FROM clockbot WHERE start_date BETWEEN '{datetime.date.today()}' AND '{datetime.date.today()+datetime.timedelta(7)}'").fetchall():
     r=requests.get(f"https://www.worldcubeassociation.org/competitions/{i[0]}/registrations/psych-sheet/clock")
-    times=[x.split("</td>")[0] for x in r.text.split('class="average">')[2:] if x.split("</td>")[0] and float(x.split("</td>")[0]) < 6]
-    competitors=[x.split("</td>")[0] for x in r.text.split('class="name">')[2:2+len(times)]]
+    times=[x.split("</td>")[0] for x in r.text.split('class="average">')[2:] if (x.split("</td>")[0] and ":" not in x.split("</td>")[0] and float(x.split("</td>")[0]) < 6)]
+    competitors=[html.unescape(x.split("</td>")[0]) for x in r.text.split('class="name">')[2:2+len(times)]]
     final = "\n".join([f"        __**{competitors[x]} - {times[x]}**__" if float(times[x]) < 4 else f"        **{competitors[x]} - {times[x]}**" if float(times[x]) < 5 else f"        *{competitors[x]} - {times[x]}*" for x in range(len(times))])
     cursor.execute("UPDATE clockbot SET competitors = ? WHERE comp_id = ?", (final,i[0]))
     connection.commit()
