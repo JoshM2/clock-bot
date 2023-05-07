@@ -9,6 +9,7 @@ import random
 from subprocess import check_output
 from scrambleconvert import scrambler, solve
 import logging
+from clockrecords import getClockRecords, formatTime
 
 
 intents = discord.Intents.default()
@@ -17,9 +18,9 @@ client = commands.Bot(command_prefix = "!", intents=intents, case_insensitive=Tr
 client.remove_command('help')
 
 logging.getLogger("discord").setLevel(logging.ERROR)
-logging.basicConfig(filename="path to log file",level=logging.INFO,format="%(asctime)s:%(message)s")
+logging.basicConfig(filename="./logger.txt",level=logging.INFO,format="%(asctime)s:%(message)s")
 
-connection = sqlite3.connect("path to database")
+connection = sqlite3.connect("./database.db")
 cursor = connection.cursor()
 
 # cursor.execute("""
@@ -35,10 +36,15 @@ cursor = connection.cursor()
 # )
 # """)
 
+#set this to whatever new channel they make
+announceChannel = 774133192536883203
+
 @client.event
 async def on_ready():
   print("Bot is online!")
+  # await client.get_channel(announceChannel).send("online!")
   task_loop.start()
+  records_loop.start()
   logging.info("Bot is online")
 
 @client.hybrid_command(description="lists upcoming clock competitions and sub 6 competitors going to each")
@@ -58,6 +64,7 @@ async def comps(ctx):
     await ctx.send(final[:index])
     await ctx.send(final[index+1:])
 
+# Gets new competitions from wca
 @tasks.loop(seconds=900)
 async def task_loop():
   try:
@@ -84,6 +91,65 @@ async def task_loop():
   except:
     logging.info("comps update fail")
 
+# Gets new (clock) records from wca
+@tasks.loop(seconds=900)
+async def records_loop():
+  try:
+    records = getClockRecords(client, announceChannel)
+    #get the times
+    for record in records:
+      times = "("
+      for d in record[-8]:
+          result = d['result'] / 100
+          # if the result is -1, replace it with 'DNF'
+          if result == -0.01:
+            result_str = 'DNF'
+          elif result == 0.00:
+            result_str = 'DNS'
+          else:
+            # format the result with two decimal places
+            result_str = "{:.2f}".format(result)
+          times += result_str + ', '
+      times = times[:-2] + ")"
+      # logging.info(times)
+    
+      ping='\n​'
+      if(record[1]!='NR'):
+        #set the ping ID here
+        ping='\n\n<@&1104454801267363931>'
+      #make the embed and set all the properties
+      embed = discord.Embed(
+        title="**"+record[6]+" "+record[2].capitalize()+" of "+formatTime(record[4])+"**",
+                        url="https://live.worldcubeassociation.org/competitions/"+record[-4]+"/rounds/"+record[-7],
+                        colour=0x8700f5,
+                        description=" ╚ "+record[3]+'  :flag_'+record[-2].lower()+':\n *'+times+'* '+ping,
+                        timestamp=datetime.datetime.utcnow())
+      
+      if(record[1]!='NR'):
+        if(record[1]=='WR'):
+          embed.set_image(url="https://raw.githubusercontent.com/Nogesma/wca-bot/main/img/WR.png")
+        elif(record[1]=='CR'):
+          embed.set_image(url="https://raw.githubusercontent.com/Nogesma/wca-bot/main/img/CR.png")
+      else:
+        embed.set_thumbnail(url="https://raw.githubusercontent.com/Nogesma/wca-bot/main/img/NR.png")
+      if(record[-3]):
+        params=record[-3]+"?event="+record[-5]
+      else:
+        params=""
+      url = "https://www.worldcubeassociation.org/persons/"+params
+      if(record[-1] == True):
+          embed.set_thumbnail(url=record[-1])
+          embed.set_author(name=record[5], icon_url=record[-1], url=url)
+      else:
+          embed.set_author(name=record[5], url=url)
+
+      embed.set_footer(text="Records Only • ᵖᶦⁿᵍ ᴵᶜᵉᶜʳᵉᵃᵐˢᵃⁿᵈʷᶜʰ ᶠᵒʳ ᵉʳʳᵒʳˢ",
+                        icon_url="https://raw.githubusercontent.com/Dex9999/icons/main/svgs/event/clock.png"
+            )
+      await client.get_channel(announceChannel).send(embed=embed)
+  except:
+    logging.info("records update fail")
+
 @client.hybrid_command(description="generates a random clock scramble")
 async def scramble(ctx):
   logging.info("!scramble")
@@ -95,7 +161,8 @@ async def scramble(ctx):
 async def optclock(ctx, *, scramble):
   logging.info("!optclock " + scramble)
   if scramble=="help":
-    await ctx.send("""Do '!optclock' followed by the scramble to use. In the solution, a lowercase pin such as 'dr' means to put up every pin except for that pin. '/' means URDL and '\' means ULDR. Ping/DM Josh M#3108 if you need more help. This program uses optclock which was made by Michael Gottlieb.""")
+    #I added your actual username thingy like when someone mentions you
+    await ctx.send("""Do '!optclock' followed by the scramble to use. In the solution, a lowercase pin such as 'dr' means to put up every pin except for that pin. '/' means URDL and '\' means ULDR. Ping/DM <@693442020487725137> if you need more help. This program uses optclock which was made by Michael Gottlieb.""")
   else:
     try:
       await ctx.send("searching for optimal solution...")
