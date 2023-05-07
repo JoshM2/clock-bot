@@ -85,20 +85,22 @@ def getClockRecords(client, channel_id):
 
             for record in records:
               # print(record)
-              try:
-               res = requests.get('https://www.worldcubeassociation.org/api/v0/persons/'+record["result"]["person"]["wcaId"])
-              except:
-                #stupid exceptions for first-timers
-                logging.warning("Person does not have wcaId: "+record["result"]["person"]["name"])
-                res = False
-              
-              if(res):
-                pfp = json.loads(res.text)["person"]["avatar"]["url"]
-              else:
-                pfp = False
               if not cursor.execute(
                     "SELECT * FROM records WHERE id = ?", (record["id"],)
                 ).fetchall():
+                    
+                    #added this line so it runs only if the person isn't in the database already
+                    try:
+                      res = requests.get('https://www.worldcubeassociation.org/api/v0/persons/'+record["result"]["person"]["wcaId"])
+                    except:
+                      #stupid exceptions for first-timers
+                      logging.warning("Person does not have wcaId: "+record["result"]["person"]["name"])
+                      res = False
+                    
+                    if(res):
+                      pfp = json.loads(res.text)["person"]["avatar"]["url"]
+                    else:
+                      pfp = False
                     cursor.execute(
                         "INSERT INTO records (id, tag, type, country_name, attemptResult, name, event, competitionName, roundId, country_iso, eventId, competitionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?,?,?)",
                         (
