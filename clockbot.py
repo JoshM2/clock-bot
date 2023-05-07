@@ -126,6 +126,8 @@ async def records_loop():
                         timestamp=datetime.datetime.utcnow())
       
       if(record[1]!='NR'):
+        #IMAGE!!! (for non NRs)
+        embed.set_thumbnail(url=record[-1])
         if(record[1]=='WR'):
           embed.set_image(url="https://raw.githubusercontent.com/Nogesma/wca-bot/main/img/WR.png")
         elif(record[1]=='CR'):
@@ -137,8 +139,7 @@ async def records_loop():
       else:
         params=""
       url = "https://www.worldcubeassociation.org/persons/"+params
-      if(record[-1] == True):
-          embed.set_thumbnail(url=record[-1])
+      if(record[-1] != False):
           embed.set_author(name=record[5], icon_url=record[-1], url=url)
       else:
           embed.set_author(name=record[5], url=url)
