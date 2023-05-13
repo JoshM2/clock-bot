@@ -36,13 +36,9 @@ cursor = connection.cursor()
 # )
 # """)
 
-#set this to whatever new channel they make
-announceChannel = 774133192536883203
-
 @client.event
 async def on_ready():
   print("Bot is online!")
-  # await client.get_channel(announceChannel).send("online!")
   task_loop.start()
   records_loop.start()
   logging.info("Bot is online")
@@ -92,6 +88,7 @@ async def task_loop():
     logging.info("comps update fail")
 
 # Gets new (clock) records from wca
+announceChannel = 868896519074480138
 @tasks.loop(seconds=900)
 async def records_loop():
   try:
@@ -162,8 +159,7 @@ async def scramble(ctx):
 async def optclock(ctx, *, scramble):
   logging.info("!optclock " + scramble)
   if scramble=="help":
-    #I added your actual username thingy like when someone mentions you
-    await ctx.send("""Do '!optclock' followed by the scramble to use. In the solution, a lowercase pin such as 'dr' means to put up every pin except for that pin. '/' means URDL and '\' means ULDR. Ping/DM <@693442020487725137> if you need more help. This program uses optclock which was made by Michael Gottlieb.""")
+    await ctx.send("""Do '!optclock' followed by the scramble to use. In the solution, a lowercase pin such as 'dr' means to put up every pin except for that pin. '/' means URDL and '\\' means ULDR. Ping/DM <@693442020487725137> if you need more help. This program uses optclock which was made by Michael Gottlieb.""")
   else:
     try:
       await ctx.send("searching for optimal solution...")
@@ -185,7 +181,7 @@ async def optclock(ctx, *, scramble):
 async def optclockall(ctx, *, scramble):
   logging.info("!optclockall " + scramble)
   if scramble=="help":
-    await ctx.send("""do '!optclockall' followed by the scramble to use. in the solution, a lowercase pin such as 'dr' means to put up every pin except for that pin. this program uses optclock which was made by Michael Gottlieb""")
+    await ctx.send("""Do '!optclockall' followed by the scramble to use. In the solution, a lowercase pin such as 'dr' means to put up every pin except for that pin. '/' means URDL and '\\' means ULDR. Ping/DM <@693442020487725137> if you need more help. This program uses optclock which was made by Michael Gottlieb.""")
   else:
     try:
       await ctx.send("searching for optimal solutions...")
@@ -193,28 +189,28 @@ async def optclockall(ctx, *, scramble):
         if len(scramble.split(" "))==14:
           out=check_output(["./path to optclock all"], input=f"{scramble}\nq\n", encoding="utf-8")
           optimal=out.split("solutions.\n")[1].split(" moves")[0]
-          final=""
+          final=out.split("solutions.\n")[1].split('\n')[0]+"\n"
           for c,v in enumerate(out.split("\n")):
             if "Found solution of length "+optimal in v:
               final+=solve(out.split("\n")[c+1].split("Found")[0].split("Checked")[0],"y2")+"\n"
         else:
-          await ctx.channel.send(f'Error: It appears you tried to enter the dial positions manually. This requires 14 numbers separated by spaces and you have {len(message.split(" "))}.')
-          logging.info("bad input: len error")
+          await ctx.channel.send(f'Error: It appears you tried to enter the dial positions manually. This requires 14 numbers separated by spaces and you have {len(scramble.split(" "))}.')
+          logging.info("bad input: num len error")
           return
       else:
         out=check_output(["./path to optclock all"], input=f"{scrambler(scramble)}\nq\n", encoding="utf-8")
         optimal=out.split("solutions.\n")[1].split(" moves")[0]
-        final=""
+        final=out.split("solutions.\n")[1].split('\n')[0]+"\n"
         for c,v in enumerate(out.split("\n")):
           if "Found solution of length "+optimal in v:
             final+=solve(out.split("\n")[c+1].split("Found")[0].split("Checked")[0],scramble)+"\n"
-      if len(final)>1950:
+      if len(final)>1850:
         final_lines = final.splitlines()
-        result = [final_lines[i] for i in range(len(final_lines)) if sum(len(line) for line in final_lines[:i+1]) < 1900]
+        result = [final_lines[i] for i in range(len(final_lines)) if sum(len(line) for line in final_lines[:i+1]) < 1850]
         final = "\n".join(result) +"\nSome solutions were removed to avoid discord's message size limit"
-      await ctx.channel.send(out.split("solutions.\n")[1].split('\n')[0]+"\n"+final)
+      await ctx.channel.send(final)
     except:
-       await ctx.channel.send('error. please check to make sure you entered the scramble correctly. use "!optclock help" to learn how to use.')
+       await ctx.channel.send('error. please check to make sure you entered the scramble correctly. use "!optclockall help" to learn how to use.')
        logging.info("bad input")
 
 #syncs the slash commands
