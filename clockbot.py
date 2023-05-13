@@ -212,6 +212,49 @@ async def optclockall(ctx, *, scramble):
     except:
        await ctx.channel.send('error. please check to make sure you entered the scramble correctly. use "!optclockall help" to learn how to use.')
        logging.info("bad input")
+      
+@client.hybrid_command(description="generates the wca scramble for a given position", aliases = ["gen"])
+async def generate(ctx, *, numbers):
+  logging.info("!gen "+numbers)
+  if numbers == "help":
+    await ctx.send("This command returns the wca scramble for a given scramble state. An example use case is getting the scramble for a lucky case you set up for an example solve. This command is not for generating random scrambles, you can use !scramble for that. This command takes 14 numbers as an input. Start at the top left and go right, entering the hour that each clock is at. Then do a y2 and do the same thing, but this time only do the edges. There should be 14 numbers (9 from the front, 5 from the back). If you need more help ping/dm <@693442020487725137>")
+    logging.info("!gen help")
+    return
+  await ctx.send("generating scramble...")
+  if all(str(ele).isdigit() for ele in numbers.split(" ")):
+    if len(numbers.split(" "))==14:
+      l=numbers.split(" ")
+      l=[int(i)%12 if int(i)%12 != 0 else 12 for i in l]
+      scramble=[0,0,0,0,0,0,0,0,0,l[4]-l[7],l[4]-l[3],l[4]-l[1],l[4]-l[5],0]
+      scramble[13]=l[4]-(scramble[9]+scramble[10]+scramble[11]+scramble[12])
+      for a in range(12):
+        for b in range(12):
+          for c in range(12):
+            for d in range(12):
+              scramble[0]=a
+              scramble[1]=b
+              scramble[2]=c
+              scramble[3]=d
+              scramble[4]=l[11]-l[13]-d-a
+              scramble[5]=l[11]-l[10]-a-b
+              scramble[6]=l[11]-l[9]-c-b
+              scramble[7]=l[11]-l[12]-d-c
+              scramble[8]=l[11]-scramble[4]-scramble[5]-scramble[6]-scramble[7]-a-b-c-d
+              temp=[["0+","1+","2+","3+","4+","5+","6+","5-","4-","3-","2-","1-"][(i+144)%12] for i in scramble]
+              wca=f"UR{temp[0]} DR{temp[1]} DL{temp[2]} UL{temp[3]} U{temp[4]} R{temp[5]} D{temp[6]} L{temp[7]} ALL{temp[8]} y2 U{temp[9]} R{temp[10]} D{temp[11]} L{temp[12]} ALL{temp[13]}"
+              s=" ".join([str(i) for i in l])
+              if s == scrambler(wca.split("y2")[1].strip(" ") + " y2 " + wca.split("y2")[0]).strip(" "):
+                await ctx.channel.send(wca)
+                print("cool")
+                return
+      await ctx.channel.send("something didn't work and idk why")
+      logging.info("gen failure")
+    else:
+      await ctx.channel.send(f"this command requires 14 space separated numbers and you have {len(numbers.split(' '))}. Use '!gen help' to learn what this command does and how it works.")
+      logging.info("bad input: num len error")
+  else:
+    await ctx.channel.send("this command requires 14 space separated numbers. Use '!gen help' to learn what this command does and how it works.")
+    logging.info("bad input")
 
 #syncs the slash commands
 @client.command()
